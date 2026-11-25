@@ -1449,6 +1449,8 @@ describe("sandbox callback bridge", () => {
       { method: "POST", path: "/api/routines/r-1/triggers" },
       { method: "PATCH", path: "/api/routine-triggers/t-1" },
       { method: "DELETE", path: "/api/routine-triggers/t-1" },
+      { method: "GET", path: "/api/plugins/tools" },
+      { method: "POST", path: "/api/plugins/tools/execute" },
     ];
     for (const request of allowed) {
       expect(authorizeSandboxCallbackBridgeRequestWithRoutes(request)).toBeNull();
@@ -1488,6 +1490,13 @@ describe("sandbox callback bridge", () => {
       { method: "POST", path: "/api/companies/co-1/logo" },
       { method: "GET", path: "/api/companies/co-1/secrets" },
       { method: "PATCH", path: "/api/secrets/secret-1" },
+      // Only tool discovery and execution: managing plugins stays a board action.
+      { method: "POST", path: "/api/plugins/tools" },
+      { method: "GET", path: "/api/plugins/tools/execute" },
+      { method: "GET", path: "/api/plugins" },
+      { method: "POST", path: "/api/plugins/install" },
+      { method: "POST", path: "/api/plugins/acme.linear/config" },
+      { method: "POST", path: "/api/plugins/acme.linear/enable" },
     ];
     for (const request of denied) {
       expect(authorizeSandboxCallbackBridgeRequestWithRoutes(request)).toBe(

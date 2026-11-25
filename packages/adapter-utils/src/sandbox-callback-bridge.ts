@@ -220,6 +220,11 @@ export const DEFAULT_SANDBOX_CALLBACK_BRIDGE_ROUTE_ALLOWLIST: readonly SandboxCa
   { method: "POST", path: /^\/api\/routines\/[^/]+\/triggers$/ },
   { method: "PATCH", path: /^\/api\/routine-triggers\/[^/]+$/ },
   { method: "DELETE", path: /^\/api\/routine-triggers\/[^/]+$/ },
+
+  // Plugin-contributed tools: discovery and execution. The tool gateway still requires a running run of the
+  // calling agent and a tool profile that includes the tool, so this only lets the request reach it.
+  { method: "GET", path: /^\/api\/plugins\/tools$/ },
+  { method: "POST", path: /^\/api\/plugins\/tools\/execute$/ },
 ] as const;
 
 // Keep the public alias for callers selecting the HTTP/2 transport.

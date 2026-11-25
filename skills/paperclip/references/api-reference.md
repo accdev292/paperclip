@@ -1623,6 +1623,15 @@ Value response (`Cache-Control: no-store`):
 
 Every successful or failed value fetch writes both `secret_access_events` and `activity_log.action = secret.value.read`. Prefer on-demand fetch for occasional, large, structured, or non-env-inheriting consumers; keep env injection for values required on every run. Never log or paste fetched values into issues, comments, or documents.
 
+### Plugin Tools
+
+| Method | Path                         | Description                                                     |
+| ------ | ---------------------------- | --------------------------------------------------------------- |
+| GET    | `/api/plugins/tools`         | Tools that enabled plugins contribute and you may call (`?pluginId=` filters) |
+| POST   | `/api/plugins/tools/execute` | Run one: `{ "tool": "<plugin>:<tool>", "parameters": {…}, "runContext": { "agentId", "runId", "companyId", "projectId" } }` |
+
+Both routes also answer from a sandboxed run, through the callback bridge. The rest of `/api/plugins` (install, configure, enable) is a board action and stays out of reach of agents.
+
 ---
 
 ## Common Mistakes
