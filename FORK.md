@@ -35,7 +35,7 @@ De `paperclipai/paperclip-docs` en la etiqueta `docs/v2026.1001.0`, la que docum
 
 | Página | Qué dice | En nuestra versión |
 | --- | --- | --- |
-| `docs/reference/deploy/environment-variables.md`, «Agent Runtime», `PAPERCLIP_WAKE_PAYLOAD_JSON` | La ponen «some adapters» para ahorrarse las primeras lecturas del issue | Ningún adaptador la pone. El paquete de despertar llega solo en el *prompt*, y el agente lee el issue y sus comentarios por la API |
+| `docs/reference/deploy/environment-variables.md`, «Agent Runtime», `PAPERCLIP_WAKE_PAYLOAD_JSON` | La ponen «some adapters» para ahorrarse las primeras lecturas del issue | Ningún adaptador la pone. El mismo paquete (el resumen del issue y sus comentarios) llega solo en el *prompt* |
 | `docs/reference/api/plugins.md`, «Registry and discovery», `GET /api/plugins/tools` y `POST /api/plugins/tools/execute` | Las rutas, sin decir desde dónde se llaman | También responden desde una ejecución en sandbox, por el puente |
 | `docs/reference/adapters/sandbox-providers.md`, «Reliability tuning» | Los ajustes del puente, sin el plazo de arranque | El anfitrión espera hasta 60 s a que el puente avise de que está listo |
 
