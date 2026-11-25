@@ -27,6 +27,7 @@ La instalación ejecuta la imagen oficial de la versión base con estos cambios 
 | --- | --- | --- | --- | --- | --- |
 | «Stop duplicating wake context in adapter environments (#13891)» | Los adaptadores dejan de copiar el paquete de despertar en `PAPERCLIP_WAKE_PAYLOAD_JSON`; el agente lo sigue recibiendo en el *prompt* | Esa variable lleva el historial de comentarios del issue. Linux no admite una cadena de entorno de 131.072 bytes o más, y con un issue de mucho historial el proceso moría al arrancar (`E2BIG`, «argument list too long») | Paperclip, `4b8ec588` (PR #13891), en v2026.1005.0 y posteriores; traído con `cherry-pick -x` | Sí, sus ficheros de `packages/` | Al pasar a v2026.1005.0 o posterior |
 | «Sandbox bridge: let sandboxed agents reach plugin tools» | El puente del sandbox deja pasar `GET /api/plugins/tools` y `POST /api/plugins/tools/execute`; el resto de `/api/plugins` sigue fuera | Sin ellas, un agente en sandbox recibe 403 «Route not allowed» antes de llegar al servidor y no puede usar las herramientas de los plugins. El servidor sigue aplicando sus permisos de agente y de perfil de herramientas | Nuestro. Sigue faltando en v2026.1117.0 (comprobado en su código el 2026-11-25) | Sí | Cuando Paperclip abra esas rutas al puente |
+| «Sandbox bridge: give the bridge a 60 s readiness window» | El anfitrión espera hasta 60 s a que el puente del sandbox avise de que está listo, en lugar de 200 sondeos de 50 ms (unos 10 s). Si el proceso muere, la espera sigue terminando al momento, y el error dice cuánto esperó y si el proceso seguía vivo | Arrancar `node` en un sandbox recién creado tarda de 3 a 5 s, pero se han medido arranques de casi 40 s cuando el proveedor va lento. Con 10 s, la ejecución moría con «Timed out waiting for bridge readiness» antes de empezar y, si la lentitud seguía en los dos reintentos, el issue se quedaba sin ejecución | Nuestro. v2026.1117.0 sigue con los 200 sondeos (comprobado en su código el 2026-11-25) | Sí | Cuando Paperclip deje un plazo así o configurable |
 
 ## Fe de erratas de la documentación oficial
 
@@ -36,6 +37,7 @@ De `paperclipai/paperclip-docs` en la etiqueta `docs/v2026.1001.0`, la que docum
 | --- | --- | --- |
 | `docs/reference/deploy/environment-variables.md`, «Agent Runtime», `PAPERCLIP_WAKE_PAYLOAD_JSON` | La ponen «some adapters» para ahorrarse las primeras lecturas del issue | Ningún adaptador la pone. El paquete de despertar llega solo en el *prompt*, y el agente lee el issue y sus comentarios por la API |
 | `docs/reference/api/plugins.md`, «Registry and discovery», `GET /api/plugins/tools` y `POST /api/plugins/tools/execute` | Las rutas, sin decir desde dónde se llaman | También responden desde una ejecución en sandbox, por el puente |
+| `docs/reference/adapters/sandbox-providers.md`, «Reliability tuning» | Los ajustes del puente, sin el plazo de arranque | El anfitrión espera hasta 60 s a que el puente avise de que está listo |
 
 ## Lo que no es código
 

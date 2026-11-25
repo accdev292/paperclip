@@ -26,6 +26,13 @@ import type { RunProcessResult } from "./server-utils.js";
 const DEFAULT_BRIDGE_TOKEN_BYTES = 24;
 const DEFAULT_BRIDGE_POLL_INTERVAL_MS = 100;
 const DEFAULT_BRIDGE_RESPONSE_TIMEOUT_MS = 30_000;
+// How long the bridge process has to write its readiness file. Starting `node`
+// in a freshly created sandbox has a long tail: a few seconds in the normal
+// case, tens of seconds when the provider is slow. A wait shorter than that
+// tail fails a run whose bridge was about to come up, so the window covers it.
+// A bridge that dies after writing to its log still fails the wait at once.
+const DEFAULT_BRIDGE_READY_TIMEOUT_MS = 60_000;
+const BRIDGE_READY_POLL_INTERVAL_MS = 50;
 const DEFAULT_BRIDGE_STOP_TIMEOUT_MS = 2_000;
 const DEFAULT_BRIDGE_MAX_QUEUE_DEPTH = 64;
 // A `BridgeBodyReservation` owner (`http2-bridge-server.ts`) now bounds the
@@ -1790,12 +1797,19 @@ export async function startSandboxCallbackBridgeServer(input: {
   pollIntervalMs?: number | null;
   responseTimeoutMs?: number | null;
   timeoutMs?: number | null;
+  /** How long to wait for the bridge to report readiness. Never longer than `timeoutMs`. */
+  readyTimeoutMs?: number | null;
   nodeCommand?: string;
   shellCommand?: "bash" | "sh" | null;
   maxQueueDepth?: number | null;
   maxBodyBytes?: number | null;
 }): Promise<StartedSandboxCallbackBridgeServer> {
   const timeoutMs = normalizeTimeoutMs(input.timeoutMs, DEFAULT_BRIDGE_RESPONSE_TIMEOUT_MS);
+  const readyTimeoutMs = Math.min(
+    normalizeTimeoutMs(input.readyTimeoutMs, DEFAULT_BRIDGE_READY_TIMEOUT_MS),
+    timeoutMs,
+  );
+  const readyPolls = Math.max(1, Math.ceil(readyTimeoutMs / BRIDGE_READY_POLL_INTERVAL_MS));
   const shellCommand = preferredShellForSandbox(input.shellCommand);
   const directories = sandboxCallbackBridgeDirectories(input.queueDir);
   let remoteEntrypoint = path.posix.join(input.assetRemoteDir, SANDBOX_CALLBACK_BRIDGE_ENTRYPOINT);
@@ -1848,7 +1862,7 @@ export async function startSandboxCallbackBridgeServer(input: {
     input.remoteCwd,
     [
       "i=0",
-      `while [ \"$i\" -lt 200 ]; do`,
+      `while [ \"$i\" -lt ${readyPolls} ]; do`,
       `  if [ -s ${shellQuote(directories.readyFile)} ]; then`,
       `    cat ${shellQuote(directories.readyFile)}`,
       "    exit 0",
@@ -1858,9 +1872,12 @@ export async function startSandboxCallbackBridgeServer(input: {
       "    exit 1",
       "  fi",
       "  i=$((i + 1))",
-      "  sleep 0.05",
+      `  sleep ${BRIDGE_READY_POLL_INTERVAL_MS / 1000}`,
       "done",
-      `echo "Timed out waiting for bridge readiness." >&2`,
+      // Say how long the wait was and whether the process is still there: a
+      // slow start and a silent death need different fixes.
+      `if kill -0 \"$(cat ${shellQuote(directories.pidFile)} 2>/dev/null)\" 2>/dev/null; then state="is still running"; else state="is not running"; fi`,
+      `echo "Timed out waiting for bridge readiness after ${readyTimeoutMs / 1000}s; the bridge process $state." >&2`,
       `if [ -s ${shellQuote(directories.logFile)} ]; then cat ${shellQuote(directories.logFile)} >&2; fi`,
       "exit 1",
     ].join("\n"),
